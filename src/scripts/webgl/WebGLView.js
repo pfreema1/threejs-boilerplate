@@ -18,7 +18,6 @@ export default class WebGLView {
 		};
 
 		this.init();
-
 	}
 
 	async init() {
