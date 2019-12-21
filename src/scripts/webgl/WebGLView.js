@@ -8,6 +8,7 @@ import OrbitControls from 'three-orbitcontrols';
 import TweenMax from 'TweenMax';
 import baseDiffuseFrag from '../../shaders/basicDiffuse.frag';
 import basicDiffuseVert from '../../shaders/basicDiffuse.vert';
+import CanvasTexture from '../CanvasTexture';
 
 export default class WebGLView {
 	constructor(app) {
@@ -27,6 +28,8 @@ export default class WebGLView {
 		this.initLights();
 		this.initTweakPane();
 		await this.loadTestMesh();
+		this.initMouseMoveListen();
+		this.initCanvasTexture();
 		this.initRenderTri();
 	}
 
@@ -41,6 +44,23 @@ export default class WebGLView {
 			.on('change', value => {
 
 			});
+	}
+
+	initCanvasTexture() {
+		this.canvasTexture = new CanvasTexture();
+	}
+
+	initMouseMoveListen() {
+		this.mouse = new THREE.Vector2();
+		this.width = window.innerWidth;
+		this.height = window.innerHeight;
+
+		window.addEventListener('mousemove', ({ clientX, clientY }) => {
+			this.mouse.x = clientX; //(clientX / this.width) * 2 - 1;
+			this.mouse.y = clientY; //-(clientY / this.height) * 2 + 1;
+
+			this.canvasTexture.addTouch(this.mouse);
+		});
 	}
 
 	initThree() {
@@ -125,6 +145,10 @@ export default class WebGLView {
 				uScene: {
 					type: 't',
 					value: this.bgRenderTarget.texture
+				},
+				uCanvasTexture: {
+					type: 't',
+					value: this.canvasTexture.texture
 				},
 				uResolution: { value: resolution },
 				uTime: {
@@ -221,6 +245,10 @@ export default class WebGLView {
 
 		if (this.testMesh) {
 			this.updateTestMesh(time);
+		}
+
+		if (this.canvasTexture) {
+			this.canvasTexture.update();
 		}
 
 		if (this.trackball) this.trackball.update();
