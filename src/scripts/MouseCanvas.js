@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { easeOutQuad, easeInOutQuad, easeOutSine, easeInOutSine } from './utils/easing.utils';
 
 
-export default class CanvasTexture {
+export default class MouseCanvas {
     constructor() {
         this.maxAge = 120;
         this.radius = 30;

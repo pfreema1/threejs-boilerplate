@@ -8,7 +8,8 @@ import OrbitControls from 'three-orbitcontrols';
 import TweenMax from 'TweenMax';
 import baseDiffuseFrag from '../../shaders/basicDiffuse.frag';
 import basicDiffuseVert from '../../shaders/basicDiffuse.vert';
-import CanvasTexture from '../CanvasTexture';
+import MouseCanvas from '../MouseCanvas';
+import TextCanvas from '../TextCanvas';
 
 export default class WebGLView {
 	constructor(app) {
@@ -24,12 +25,12 @@ export default class WebGLView {
 	async init() {
 		this.initThree();
 		this.initBgScene();
-		this.initObject();
 		this.initLights();
 		this.initTweakPane();
 		await this.loadTestMesh();
+		this.setupTextCanvas();
 		this.initMouseMoveListen();
-		this.initCanvasTexture();
+		this.initMouseCanvas();
 		this.initRenderTri();
 	}
 
@@ -46,8 +47,8 @@ export default class WebGLView {
 			});
 	}
 
-	initCanvasTexture() {
-		this.canvasTexture = new CanvasTexture();
+	initMouseCanvas() {
+		this.mouseCanvas = new MouseCanvas();
 	}
 
 	initMouseMoveListen() {
@@ -59,7 +60,7 @@ export default class WebGLView {
 			this.mouse.x = clientX; //(clientX / this.width) * 2 - 1;
 			this.mouse.y = clientY; //-(clientY / this.height) * 2 + 1;
 
-			this.canvasTexture.addTouch(this.mouse);
+			this.mouseCanvas.addTouch(this.mouse);
 		});
 	}
 
@@ -72,6 +73,10 @@ export default class WebGLView {
 		this.renderer.autoClear = true;
 
 		this.clock = new THREE.Clock();
+	}
+
+	setupTextCanvas() {
+		this.textCanvas = new TextCanvas(this);
 	}
 
 	loadTestMesh() {
@@ -146,9 +151,13 @@ export default class WebGLView {
 					type: 't',
 					value: this.bgRenderTarget.texture
 				},
-				uCanvasTexture: {
+				uMouseCanvas: {
 					type: 't',
-					value: this.canvasTexture.texture
+					value: this.mouseCanvas.texture
+				},
+				uTextCanvas: {
+					type: 't',
+					value: this.textCanvas.texture
 				},
 				uResolution: { value: resolution },
 				uTime: {
@@ -189,20 +198,6 @@ export default class WebGLView {
 		this.bgScene.add(this.pointLight);
 	}
 
-	initObject() {
-		let geo = new THREE.TetrahedronBufferGeometry(10, 0);
-		let mat = new THREE.MeshPhysicalMaterial({
-			roughness: 0.5,
-			metalness: 0.3,
-			reflectivity: 1,
-			clearcoat: 1
-		});
-		this.tetra = new THREE.Mesh(geo, mat);
-		console.log('tetra:  ', this.tetra);
-
-		// this.bgScene.add(this.tetra);
-	}
-
 	resize() {
 		if (!this.renderer) return;
 		this.camera.aspect = window.innerWidth / window.innerHeight;
@@ -219,14 +214,18 @@ export default class WebGLView {
 		if (this.trackball) this.trackball.handleResize();
 	}
 
-	updateTetra() {
-		this.tetra.rotation.y += this.PARAMS.rotSpeed;
-	}
 
 	updateTestMesh(time) {
 		this.testMesh.rotation.y += this.PARAMS.rotSpeed;
 
 		this.testMeshMaterial.uniforms.u_time.value = time;
+	}
+
+	updateTextCanvas(time) {
+
+		this.textCanvas.textLine.update(time);
+		this.textCanvas.textLine.draw(time);
+		this.textCanvas.texture.needsUpdate = true;
 	}
 
 	update() {
@@ -239,16 +238,16 @@ export default class WebGLView {
 			this.triMaterial.uniforms.uTime.value = time;
 		}
 
-		if (this.tetra) {
-			this.updateTetra();
-		}
-
 		if (this.testMesh) {
 			this.updateTestMesh(time);
 		}
 
-		if (this.canvasTexture) {
-			this.canvasTexture.update();
+		if (this.mouseCanvas) {
+			this.mouseCanvas.update();
+		}
+
+		if (this.textCanvas) {
+			this.updateTextCanvas(time);
 		}
 
 		if (this.trackball) this.trackball.update();
