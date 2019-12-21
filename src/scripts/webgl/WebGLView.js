@@ -6,21 +6,14 @@ import fullScreenTriFrag from '../../shaders/fullScreenTri.frag';
 import fullScreenTriVert from '../../shaders/fullScreenTri.vert';
 import OrbitControls from 'three-orbitcontrols';
 import TweenMax from 'TweenMax';
-
-function remap(t, old_min, old_max, new_min, new_max) {
-	let old_range = old_max - old_min;
-	let normalizedT = t - old_min;
-	let normalizedVal = normalizedT / old_range;
-	let new_range = new_max - new_min;
-	let newVal = normalizedVal * new_range + new_min;
-	return newVal;
-}
+import baseDiffuseFrag from '../../shaders/basicDiffuse.frag';
+import basicDiffuseVert from '../../shaders/basicDiffuse.vert';
 
 export default class WebGLView {
 	constructor(app) {
 		this.app = app;
 		this.PARAMS = {
-			rotSpeed: 0.05
+			rotSpeed: 0.005
 		};
 
 		this.init();
@@ -33,7 +26,7 @@ export default class WebGLView {
 		this.initObject();
 		this.initLights();
 		this.initTweakPane();
-		await this.loadTextMesh();
+		await this.loadTestMesh();
 		this.initRenderTri();
 	}
 
@@ -61,17 +54,35 @@ export default class WebGLView {
 		this.clock = new THREE.Clock();
 	}
 
-	loadTextMesh() {
+	loadTestMesh() {
 		return new Promise((res, rej) => {
 			let loader = new GLTFLoader();
 
 			loader.load('./bbali.glb', object => {
-				object;
-				this.textMesh = object.scene.children[0];
-				console.log(this.textMesh);
-				this.textMesh.add(new THREE.AxesHelper());
-				this.bgScene.add(this.textMesh);
+				this.testMesh = object.scene.children[0];
+				console.log(this.testMesh);
+				this.testMesh.add(new THREE.AxesHelper());
 
+				this.testMeshMaterial = new THREE.ShaderMaterial({
+					fragmentShader: glslify(baseDiffuseFrag),
+					vertexShader: glslify(basicDiffuseVert),
+					uniforms: {
+						u_time: {
+							value: 0.0
+						},
+						u_lightColor: {
+							value: new THREE.Vector3(0.0, 1.0, 1.0)
+						},
+						u_lightPos: {
+							value: new THREE.Vector3(-2.2, 2.0, 2.0)
+						}
+					}
+				});
+
+				this.testMesh.material = this.testMeshMaterial;
+				this.testMesh.material.needsUpdate = true;
+
+				this.bgScene.add(this.testMesh);
 				res();
 			});
 		});
@@ -188,8 +199,10 @@ export default class WebGLView {
 		this.tetra.rotation.y += this.PARAMS.rotSpeed;
 	}
 
-	updateTextMesh() {
-		this.textMesh.rotation.y += this.PARAMS.rotSpeed;
+	updateTestMesh(time) {
+		this.testMesh.rotation.y += this.PARAMS.rotSpeed;
+
+		this.testMeshMaterial.uniforms.u_time.value = time;
 	}
 
 	update() {
@@ -206,8 +219,8 @@ export default class WebGLView {
 			this.updateTetra();
 		}
 
-		if (this.textMesh) {
-			this.updateTextMesh();
+		if (this.testMesh) {
+			this.updateTestMesh(time);
 		}
 
 		if (this.trackball) this.trackball.update();
