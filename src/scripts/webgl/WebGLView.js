@@ -2,14 +2,13 @@ import * as THREE from 'three';
 import GLTFLoader from 'three-gltf-loader';
 import glslify from 'glslify';
 import Tweakpane from 'tweakpane';
-import fullScreenTriFrag from '../../shaders/fullScreenTri.frag';
-import fullScreenTriVert from '../../shaders/fullScreenTri.vert';
 import OrbitControls from 'three-orbitcontrols';
 import TweenMax from 'TweenMax';
 import baseDiffuseFrag from '../../shaders/basicDiffuse.frag';
 import basicDiffuseVert from '../../shaders/basicDiffuse.vert';
 import MouseCanvas from '../MouseCanvas';
 import TextCanvas from '../TextCanvas';
+import RenderTri from '../RenderTri';
 
 export default class WebGLView {
 	constructor(app) {
@@ -113,64 +112,10 @@ export default class WebGLView {
 		});
 	}
 
-	returnRenderTriGeometry() {
-		const geometry = new THREE.BufferGeometry();
-
-		// triangle in clip space coords
-		const vertices = new Float32Array([-1.0, -1.0, 3.0, -1.0, -1.0, 3.0]);
-
-		geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 2));
-
-		return geometry;
-	}
-
 	initRenderTri() {
-		// mostly taken from here: https://medium.com/@luruke/simple-postprocessing-in-three-js-91936ecadfb7
-
 		this.resize();
-		const geometry = this.returnRenderTriGeometry();
 
-		const resolution = new THREE.Vector2();
-		this.renderer.getDrawingBufferSize(resolution);
-
-		this.RenderTriTarget = new THREE.WebGLRenderTarget(
-			resolution.x,
-			resolution.y,
-			{
-				format: THREE.RGBFormat,
-				stencilBuffer: false,
-				depthBuffer: true
-			}
-		);
-
-		this.triMaterial = new THREE.RawShaderMaterial({
-			fragmentShader: glslify(fullScreenTriFrag),
-			vertexShader: glslify(fullScreenTriVert),
-			uniforms: {
-				uScene: {
-					type: 't',
-					value: this.bgRenderTarget.texture
-				},
-				uMouseCanvas: {
-					type: 't',
-					value: this.mouseCanvas.texture
-				},
-				uTextCanvas: {
-					type: 't',
-					value: this.textCanvas.texture
-				},
-				uResolution: { value: resolution },
-				uTime: {
-					value: 0.0
-				}
-			}
-		});
-
-		console.log(this.bgRenderTarget.texture);
-
-		let renderTri = new THREE.Mesh(geometry, this.triMaterial);
-		renderTri.frustumCulled = false;
-		this.scene.add(renderTri);
+		this.renderTri = new RenderTri(this.scene, this.renderer, this.bgRenderTarget, this.mouseCanvas, this.textCanvas)
 	}
 
 	initBgScene() {
@@ -234,8 +179,8 @@ export default class WebGLView {
 
 		this.controls.update();
 
-		if (this.triMaterial) {
-			this.triMaterial.uniforms.uTime.value = time;
+		if (this.renderTri) {
+			this.renderTri.triMaterial.uniforms.uTime.value = time;
 		}
 
 		if (this.testMesh) {
