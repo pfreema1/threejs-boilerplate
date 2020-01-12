@@ -9,6 +9,10 @@ import basicDiffuseVert from '../../shaders/basicDiffuse.vert';
 import MouseCanvas from '../MouseCanvas';
 import TextCanvas from '../TextCanvas';
 import RenderTri from '../RenderTri';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { BloomPass } from 'three/examples/jsm/postprocessing/BloomPass.js';
+import { FilmPass } from 'three/examples/jsm/postprocessing/FilmPass.js';
 
 export default class WebGLView {
 	constructor(app) {
@@ -30,6 +34,31 @@ export default class WebGLView {
 		this.initMouseMoveListen();
 		this.initMouseCanvas();
 		this.initRenderTri();
+		this.initPostProcessing();
+
+	}
+
+	initPostProcessing() {
+		this.composer = new EffectComposer(this.renderer);
+
+		this.composer.addPass(new RenderPass(this.scene, this.camera));
+
+		const bloomPass = new BloomPass(
+			1,    // strength
+			25,   // kernel size
+			4,    // sigma ?
+			256,  // blur render target resolution
+		);
+		this.composer.addPass(bloomPass);
+
+		const filmPass = new FilmPass(
+			0.35,   // noise intensity
+			0.025,  // scanline intensity
+			648,    // scanline count
+			false,  // grayscale
+		);
+		filmPass.renderToScreen = true;
+		this.composer.addPass(filmPass);
 	}
 
 	initTweakPane() {
@@ -203,6 +232,10 @@ export default class WebGLView {
 		this.renderer.setRenderTarget(null);
 
 		this.renderer.render(this.scene, this.camera);
+
+		if (this.composer) {
+			this.composer.render();
+		}
 
 	}
 }
