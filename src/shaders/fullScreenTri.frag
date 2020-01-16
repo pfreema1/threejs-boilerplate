@@ -13,9 +13,9 @@ void main() {
     vec4 textCanvasColor = texture2D(uTextCanvas, uv);
 
 
-    color = sceneColor + canvasTextureColor;
+    color = sceneColor;
 
-    color = mix(color, textCanvasColor, step(0.7, uv.x));
+    // color = mix(color, textCanvasColor, step(0.7, uv.x));
     
     gl_FragColor = vec4(color);
 }
