@@ -116,7 +116,7 @@ export default class FBO {
       1
     );
     this.scene.add(
-      new THREE.Mesh(new THREE.PlaneGeometry(this.w, this.w), this.simMat)
+      new THREE.Mesh(new THREE.PlaneGeometry(this.w, this.w), this.simMaterial)
     );
   }
 
