@@ -207,7 +207,7 @@ export default class WebGLView {
     );
     this.controls = new OrbitControls(this.bgCamera, this.renderer.domElement);
 
-    this.bgCamera.position.z = 3;
+    this.bgCamera.position.z = 1;
     this.controls.update();
 
     this.bgScene = new THREE.Scene();

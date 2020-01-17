@@ -124,7 +124,7 @@ vec3 curl(float	x,	float	y,	float	z)
 
 
 void main() {
-    float frequency = 4.5;
+    float frequency = 2.5;
     float amplitude = 0.5;
     float maxDistance = 3.0;
 

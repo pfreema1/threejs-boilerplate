@@ -20,6 +20,33 @@ export default class FBO {
     this.setupParticlesGeometry();
     this.setupParticlesMaterial();
     this.setupParticlesMesh();
+
+    this.setupKeyboardControls();
+  }
+
+  setupKeyboardControls() {
+    document.addEventListener('keydown', e => {
+      if (e.keyCode == 80) {
+        // p
+        console.log('resetting!');
+        this.feedPositionsIntoDataTexture();
+        this.createMaterial();
+        this.initFBO();
+        this.initRenderTargets();
+        this.fboMesh.material.uniforms.posTex.value = this.dataTex;
+        this.fboMesh.material.needsUpdate = true;
+        this.particlesMaterial.needsUpdate = true;
+      } else if (e.keyCode == 38) {
+        // up
+        console.log('positive z');
+      } else if (e.keyCode == 39) {
+        // right
+        console.log('positive x');
+      } else if (e.keyCode == 40) {
+        // down
+        console.log('negative z');
+      }
+    });
   }
 
   render(time) {
@@ -50,6 +77,8 @@ export default class FBO {
       this.particlesGeo,
       this.particlesMaterial
     );
+
+    this.particlesMesh.position.set(-0.5, -0.5, 0.0);
     this.bgScene.add(this.particlesMesh);
   }
 
@@ -117,9 +146,12 @@ export default class FBO {
       -1,
       1
     );
-    this.scene.add(
-      new THREE.Mesh(new THREE.PlaneGeometry(this.w, this.w), this.simMaterial)
+    this.fboMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(this.w, this.w),
+      this.simMaterial
     );
+
+    this.scene.add(this.fboMesh);
   }
 
   createMaterial() {
