@@ -140,8 +140,8 @@ export default class FBO {
   }
 
   setInitialPositions() {
-    this.w = 256;
-    this.h = 256;
+    this.w = 512;
+    this.h = 512;
     let i = 0;
     this.data = new Float32Array(this.w * this.h * 3);
 
