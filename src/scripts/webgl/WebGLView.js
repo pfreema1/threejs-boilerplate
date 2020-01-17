@@ -31,7 +31,7 @@ export default class WebGLView {
     this.initBgScene();
     this.initLights();
     this.initTweakPane();
-    await this.loadTestMesh();
+    // await this.loadTestMesh();
     this.setupTextCanvas();
     this.initMouseMoveListen();
     this.initMouseCanvas();
@@ -267,6 +267,10 @@ export default class WebGLView {
 
     if (this.textCanvas) {
       this.updateTextCanvas(time);
+    }
+
+    if (this.FBO) {
+      this.FBO.time = time;
     }
 
     if (this.trackball) this.trackball.update();

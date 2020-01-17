@@ -9,6 +9,7 @@ export default class FBO {
   constructor(renderer, bgScene) {
     this.renderer = renderer;
     this.bgScene = bgScene;
+    this.time = null;
 
     this.setInitialPositions();
     this.feedPositionsIntoDataTexture();
@@ -21,7 +22,7 @@ export default class FBO {
     this.setupParticlesMesh();
   }
 
-  render() {
+  render(time) {
     // at the start of the render block, A is one frame behind B
     const oldA = this.renderTargetA; // store A, the penultimate state
     this.renderTargetA = this.renderTargetB; // advance A to the updated state
@@ -29,6 +30,7 @@ export default class FBO {
 
     // pass the updated positional values to the simulation
     this.simMaterial.uniforms.posTex.value = this.renderTargetA.texture;
+    this.simMaterial.uniforms.uTime.value = this.time;
 
     // run a frame and store the new positional values in renderTargetB
     this.renderer.setRenderTarget(this.renderTargetB);
@@ -126,6 +128,10 @@ export default class FBO {
         posTex: {
           type: 't',
           value: this.dataTex
+        },
+        uTime: {
+          type: 'f',
+          value: null
         }
       },
       vertexShader: glslify(simulationVert),
