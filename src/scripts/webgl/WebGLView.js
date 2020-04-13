@@ -14,6 +14,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { BloomPass } from 'three/examples/jsm/postprocessing/BloomPass.js';
 import { FilmPass } from 'three/examples/jsm/postprocessing/FilmPass.js';
 import { debounce } from '../utils/debounce';
+import Blur from '../Blur';
 
 export default class WebGLView {
   constructor(app) {
@@ -30,13 +31,36 @@ export default class WebGLView {
     this.initBgScene();
     this.initLights();
     this.initTweakPane();
-    await this.loadTestMesh();
     this.setupTextCanvas();
     this.initMouseMoveListen();
     this.initMouseCanvas();
     this.initRenderTri();
     this.initPostProcessing();
     this.initResizeHandler();
+
+    this.addCubes();
+
+    this.initBlur();
+  }
+
+  initBlur() {
+    this.blur = new Blur(this.bgScene, this.bgCamera, this.renderer);
+  }
+
+  addCubes() {
+    let geo = new THREE.BoxBufferGeometry(0.5, 0.5, 0.5, 8, 8, 8);
+    let mat1 = new THREE.MeshBasicMaterial({ color: 'blue' });
+    let mat2 = new THREE.MeshBasicMaterial({ color: 'green' });
+
+    this.cube1 = new THREE.Mesh(geo, mat1);
+    this.cube1.position.x = -1;
+    this.cube2 = new THREE.Mesh(geo, mat2);
+    this.cube2.position.x = 1;
+
+    this.bgScene.add(this.cube1);
+    this.bgScene.add(this.cube2);
+
+
   }
 
   initResizeHandler() {
@@ -50,7 +74,7 @@ export default class WebGLView {
 
         // render tri
         this.renderTri.renderer.setSize(this.width, this.height);
-        this.renderTri.triMaterial.uniforms.uResolution.value = new THREE.Vector2(
+        this.renderTri.mat.uniforms.uResolution.value = new THREE.Vector2(
           this.width,
           this.height
         );
@@ -64,7 +88,7 @@ export default class WebGLView {
         this.textCanvas.canvas.width = this.width;
         this.textCanvas.canvas.height = this.height;
         this.setupTextCanvas();
-        this.renderTri.triMaterial.uniforms.uTextCanvas.value = this.textCanvas.texture;
+        this.renderTri.mat.uniforms.uTextCanvas.value = this.textCanvas.texture;
 
         // mouse canvas
         this.mouseCanvas.canvas.width = this.width;
@@ -142,39 +166,6 @@ export default class WebGLView {
     this.textCanvas = new TextCanvas(this);
   }
 
-  loadTestMesh() {
-    return new Promise((res, rej) => {
-      let loader = new GLTFLoader();
-
-      loader.load('./bbali.glb', object => {
-        this.testMesh = object.scene.children[0];
-        console.log(this.testMesh);
-        this.testMesh.add(new THREE.AxesHelper());
-
-        this.testMeshMaterial = new THREE.ShaderMaterial({
-          fragmentShader: glslify(baseDiffuseFrag),
-          vertexShader: glslify(basicDiffuseVert),
-          uniforms: {
-            u_time: {
-              value: 0.0
-            },
-            u_lightColor: {
-              value: new THREE.Vector3(0.0, 1.0, 1.0)
-            },
-            u_lightPos: {
-              value: new THREE.Vector3(-2.2, 2.0, 2.0)
-            }
-          }
-        });
-
-        this.testMesh.material = this.testMeshMaterial;
-        this.testMesh.material.needsUpdate = true;
-
-        this.bgScene.add(this.testMesh);
-        res();
-      });
-    });
-  }
 
   initRenderTri() {
     this.resize();
@@ -228,13 +219,6 @@ export default class WebGLView {
 
     if (this.trackball) this.trackball.handleResize();
   }
-
-  updateTestMesh(time) {
-    this.testMesh.rotation.y += this.PARAMS.rotSpeed;
-
-    this.testMeshMaterial.uniforms.u_time.value = time;
-  }
-
   updateTextCanvas(time) {
     this.textCanvas.textLine.update(time);
     this.textCanvas.textLine.draw(time);
@@ -248,12 +232,9 @@ export default class WebGLView {
     this.controls.update();
 
     if (this.renderTri) {
-      this.renderTri.triMaterial.uniforms.uTime.value = time;
+      this.renderTri.mat.uniforms.uTime.value = time;
     }
 
-    if (this.testMesh) {
-      this.updateTestMesh(time);
-    }
 
     if (this.mouseCanvas) {
       this.mouseCanvas.update();
@@ -267,14 +248,23 @@ export default class WebGLView {
   }
 
   draw() {
+
     this.renderer.setRenderTarget(this.bgRenderTarget);
     this.renderer.render(this.bgScene, this.bgCamera);
     this.renderer.setRenderTarget(null);
 
+    // run blur process
+    this.blur.draw(this.bgRenderTarget.texture);
+
+    // set blurred texture uniform
+    this.renderTri.mat.uniforms.blurredTexture.value = this.blur.rt2.texture;
+    // debugger;
+
+    // maybe this isnt needed because of composer below?
     this.renderer.render(this.scene, this.camera);
 
-    if (this.composer) {
-      this.composer.render();
-    }
+    // if (this.composer) {
+    //   this.composer.render();
+    // }
   }
 }

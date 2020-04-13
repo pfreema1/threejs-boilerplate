@@ -26,7 +26,7 @@ export default class RenderTri {
       }
     );
 
-    this.triMaterial = new THREE.RawShaderMaterial({
+    this.mat = new THREE.RawShaderMaterial({
       fragmentShader: glslify(fullScreenTriFrag),
       vertexShader: glslify(fullScreenTriVert),
       uniforms: {
@@ -45,13 +45,16 @@ export default class RenderTri {
         uResolution: { value: resolution },
         uTime: {
           value: 0.0
+        },
+        blurredTexture: {
+          value: null
         }
       }
     });
 
     let renderTri = new THREE.Mesh(
       this.returnRenderTriGeometry(),
-      this.triMaterial
+      this.mat
     );
     renderTri.frustumCulled = false;
 
