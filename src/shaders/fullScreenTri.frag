@@ -15,6 +15,7 @@ void main() {
     vec4 blurredColor = texture2D(blurredTexture, uv);
 
     color = mix(sceneColor, blurredColor, step(0.5, uv.x));
+    // color = sceneColor - blurredColor;
     
     gl_FragColor = vec4(color);
 }
